@@ -1,3 +1,6 @@
+// opis algorytmu:
+// http://dominik.zelazny.staff.iiar.pwr.wroc.pl/materialy/Algorytm_Schrage.pdf
+
 #include <iostream>
 #include <fstream>
 #include <queue>
