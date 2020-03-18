@@ -2,46 +2,47 @@
 #include <algorithm>
 #include <fstream>
 #include <map>
-#include <vector>
-#include <cstdlib>
+#include <string>
 
 using namespace std;
 
-int main() {
+void Jackson(string fileName)
+{
 
 	fstream plik;
-	plik.open("JACK1.DAT", ios::in);
-	multimap<int, int> dane;
-	int n;
-	vector<int> cpi;
-	cpi.push_back(0);
-
-	plik >> n;
+	plik.open(fileName, ios::in);
 
 	if (plik.good())
 	{
+		multimap<int, int> dane;
+		int n;
 		int r{ 0 }, p{ 0 };
+
+		plik >> n;
 		while ((plik >> r) && (plik >> p))
-		{
 			dane.insert({ r,p });
-		}
+
+		int noweC{ 0 };
+		for (auto& x : dane)
+			noweC = max(noweC, x.first) + x.second;
+		cout << noweC <<endl;
 	}
 	else
 	{
 		cout << "Blad otwierania pliku " << endl;
 		exit(0);
 	}
+}
 
-	int licznik{ 0 };
-	for (auto& x : dane)
+int main() 
+{
+
+	for (int i = 1; i <= 8; i++)
 	{
-		int noweC;
-		noweC = max(cpi[licznik], x.first) + x.second;
-		cpi.push_back(noweC);
-		++licznik;
+		string name = "JACK";
+		string num = to_string(i);
+		string ext = ".DAT";
+		Jackson(name + num + ext);
 	}
-
-	cout << cpi[n];
-
 	return 0;
 }
