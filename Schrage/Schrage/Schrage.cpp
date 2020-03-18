@@ -58,7 +58,8 @@ void Schrage(string fileName)
 		{
 			while (!N.empty() && t >= N.top().r)
 			{
-				G.push(N.top());
+				e = N.top();
+				G.push(e);
 				N.pop();
 			}
 			if(G.empty())
@@ -71,7 +72,7 @@ void Schrage(string fileName)
 			t += e.p;
 			cMax = max(cMax, t + e.q);
 		}
-		cout << cMax << endl <<endl;
+		cout << cMax << endl;
 	}
 	else
 	{
