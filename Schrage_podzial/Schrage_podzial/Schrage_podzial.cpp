@@ -84,7 +84,7 @@ void Schrage(string fileName)
 			t += e.p;
 			cMax = max(cMax, t + e.q);
 		}
-		cout << cMax << endl << endl;
+		cout << cMax << endl;
 	}
 	else
 	{
