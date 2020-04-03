@@ -3,16 +3,19 @@
 #include <queue>
 #include <string>
 #include <vector>
-
+#include <climits>
 
 using namespace std;
 
 int n;
 
+
 struct Action
 {
 	int id{ 0 }, r{ 0 }, p{ 0 }, q{ 0 }, f{ 0 }; // f -- termin rozpoczęcia
 };
+
+vector<Action> PI;
 
 struct SchrageData
 {
@@ -20,7 +23,7 @@ struct SchrageData
 	vector<Action> PI;
 };
 
-struct ActionAscending
+struct LowestR
 {
 	bool operator()(const Action& x, const Action& y)
 	{
@@ -28,11 +31,19 @@ struct ActionAscending
 	}
 };
 
-struct ActionDescending
+struct HighestQ
 {
 	bool operator()(const Action& x, const Action& y)
 	{
 		return x.q < y.q;
+	}
+};
+
+struct LowestQ
+{
+	bool operator()(const Action& x, const Action& y)
+	{
+		return x.q > y.q;
 	}
 };
 
@@ -65,10 +76,14 @@ Action* loadFromFile(string fileName)
 
 }
 
-SchrageData Schrage(Action* actions, vector<Action> PI)
+
+int /*SchrageData*/ Schrage(Action* actions/*, vector<Action> PI*/)
 {
-	priority_queue<Action, vector<Action>, ActionAscending> N;
-	priority_queue<Action, vector<Action>, ActionDescending> G;
+	if (!PI.empty())
+		PI.clear();
+
+	priority_queue<Action, vector<Action>, LowestR> N;
+	priority_queue<Action, vector<Action>, HighestQ> G;
 
 	for (int i = 0; i < n; i++)
 		N.push(actions[i]);
@@ -97,48 +112,136 @@ SchrageData Schrage(Action* actions, vector<Action> PI)
 		PI.push_back(e);
 	}
 	int U = cMax;
-
-	cout << "U: " << U << ' ';
-
-	int piSize = PI.size();
-	cout << "PI: ";
-	for (int i = 0; i < piSize; i++)
-	{
-		int piId = PI[i].id;
-		cout << piId << ' ';
-	}
-
+	return U;
+	/*
 	SchrageData SD;
 	SD.PI = PI;
 	SD.U = U;
-
 	return SD;
+	*/
 }
 
-int Carlier(Action* actions, vector<Action> PI)
+void Carlier(Action* actions, int UB)
 {
-	SchrageData schrageData = Schrage(actions, PI);
-	int U = schrageData.U;
-
+	int U, LB;
 	Action a, b, c;
-
-	// cos jeszcze
+	vector<Action> pi;
+	int cR, cQ;
+	int r1{ 0 }, p1{ 0 }, q1{ 0 }; // primy
+	bool isC = false; // czy c jest potrzbne
 	
+	// 1.
+	cout << "1. ";
+	U = Schrage(actions);
+	cout <<"U: " << U << endl;
+	
+	// 2.
+	if (U < UB) { cout << "2. "; UB = U; pi = PI; }
+
+	int s = pi.size();
+	for (int i = 0; i < n; i++)
+	{
+		cout << pi[i].id << ' ';
+	}
+	cout << endl;
+
+	// 3.
+	cout << "3. \n";
 	for (int i = n - 1; i >= 0; i--) // pętla -- szukanie b, a, c
 	{
 		// b.id == 0 żeby nie szukać kolejnych
-		if (schrageData.PI[i].f + schrageData.PI[i].q == U && b.id == 0)
-			b = schrageData.PI[i];
-		if (i > 0 && b.id != 0 && schrageData.PI[i].f - schrageData.PI[i].p == schrageData.PI[i - 1].f)
-			a = schrageData.PI[i - 1];
-		if (c.id == 0 && schrageData.PI[i].q < b.q)
-			c = schrageData.PI[i];
+		if (pi[i].f + pi[i].q == U && b.id == 0)
+			b = pi[i];
+		if (i > 0 && b.id != 0 && pi[i].f - pi[i].p == pi[i - 1].f)
+			a = pi[i - 1];
+		if (c.id == 0 && pi[i].q < b.q)
+			c = pi[i];
 	}
 
-	cout << endl;
-	cout << a.id << ' ' << c.id << ' ' << b.id;
+	if (b.f - b.p != a.f)
+		isC = true; // c jest potrzebne
+
+
+	// 4.
+	if (!isC)
+	{
+		cout << "4.\n";
+		return;
+	}
+		
+
+	// 5.
+	cout << "5.\n";
+	int j = 0;
+	priority_queue<Action, vector<Action>, LowestR> R; // kolejki do wyznaczania r' i q'
+	priority_queue<Action, vector<Action>, LowestQ> Q;
+		
+	while (pi[j].id != c.id) // przewijanie do zadania c
+		j++;
+
+	while (pi[j].id != b.id) // wyznaczanie r', p', q'
+	{
+		j++;
+			
+		R.push(pi[j]); // wybieranie najmniejszego r z zakresu c+1 <= j <= b
+		Q.push(pi[j]); // wybieranie najmniejszego q z zakresu c+1 <= j <= b
+		p1 += pi[j].p;
+	}
+	r1 = R.top().r;
+	q1 = Q.top().q;
+
+
+	// 6.
+	cout << "6. \n";
+	cR = c.r; // przechowanie starego c.r
+	c.r = max(c.r, r1 + p1); // modyfikacja c.r -- przesunięcie c za b
+	actions[c.id - 1] = c;
 	
-	return 0;
+
+	// 7. 
+	cout << "7. ";
+	LB = Schrage(actions); // wywołanie Schrage dla nowego ustawienia
+	cout << "LB: " << LB << endl;
+
+	// 8. 9.
+	if (LB < UB)
+	{
+		cout << "8. 9.\n";
+		Carlier(actions, UB);
+	}
+
+	// 10.
+	cout << "10.\n";
+	c.r = cR;
+	actions[c.id - 1] = c;
+	
+
+	// 11.
+	cout << "11.\n";
+	cQ = c.q; // przechowanie starego c.q
+	c.q = max(c.q, q1 + p1); // modyfikacja c.q -- przesunięcie c przed c + 1
+	actions[c.id - 1] = c;
+
+	// 12.
+	cout << "12. ";
+	LB = Schrage(actions);
+	cout << "LB: " << LB << endl;
+
+	// 13. 14.
+	if (LB < UB)
+	{
+		cout << "13. 14.\n";
+		Carlier(actions, UB);
+	}
+
+	// 15.
+	cout << "15.";
+	c.q = cQ;
+	actions[c.id - 1] = c;
+
+	cout << a.id << ' ' << c.id << ' ' << b.id <<endl;
+	cout << U << endl;
+
 }
 
 
@@ -154,6 +257,7 @@ int main()
 	}
 	*/
 	vector<Action> PI;
-	Carlier(loadFromFile("SCHRAGE3.DAT"), PI);
-	
+	int UB = INT_MAX;
+	Carlier(loadFromFile("SCHRAGE3.DAT"), UB);
+
 }
