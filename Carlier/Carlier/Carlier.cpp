@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <climits>
+#include <memory>
 
 using namespace std;
 
@@ -38,7 +39,7 @@ struct LowestQ
 	}
 };
 
-Action* loadFromFile(string fileName)
+vector<Action> loadFromFile(string fileName)
 {
 	fstream plik;
 	plik.open(fileName, ios::in);
@@ -46,7 +47,7 @@ Action* loadFromFile(string fileName)
 	if (plik.good())
 	{
 		plik >> n;
-		Action* A = new Action[n];
+		vector<Action> A(n);
 		int i = 0;
 		while (!plik.eof())
 		{
@@ -56,7 +57,6 @@ Action* loadFromFile(string fileName)
 		}
 		
 		return A;	
-		delete[] A;
 	}
 	else
 	{
@@ -67,7 +67,7 @@ Action* loadFromFile(string fileName)
 
 }
 
-int Schrage(Action* actions, vector<Action>& pi)
+int Schrage(vector<Action> actions, vector<Action>& pi)
 {
 	if (!pi.empty())
 		pi.clear();
@@ -106,7 +106,7 @@ int Schrage(Action* actions, vector<Action>& pi)
 
 }
 
-int preSchrage(Action* actions)
+int preSchrage(vector<Action> actions)
 {
 
 	priority_queue<Action, vector<Action>, LowestR> N;
@@ -228,7 +228,7 @@ void showCutRightDetails(int nd, int LB, int UB)
 	cout << "cut right child of node: " << nd << " LB: " << LB << " UB: " << UB << endl;
 }
 
-void Carlier(Action* actions, vector<Action>& pi_opt, int& UB, int& overall_nodes, int current_node, int parent)
+void Carlier(vector<Action> actions, vector<Action>& pi_opt, int& UB, int& overall_nodes, int current_node, int parent)
 {
 	// do liczenia węzłów
 	parent = current_node; 
