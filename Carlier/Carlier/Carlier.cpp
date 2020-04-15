@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <climits>
-#include <memory>
 
 using namespace std;
 
@@ -31,13 +30,6 @@ struct HighestQ
 	}
 };
 
-struct LowestQ
-{
-	bool operator()(const Action& x, const Action& y)
-	{
-		return x.q > y.q;
-	}
-};
 
 vector<Action> loadFromFile(string fileName)
 {
@@ -55,7 +47,7 @@ vector<Action> loadFromFile(string fileName)
 			plik >> A[i].r >> A[i].p >> A[i].q;
 			i++;
 		}
-		
+		plik.close();
 		return A;	
 	}
 	else
@@ -63,7 +55,7 @@ vector<Action> loadFromFile(string fileName)
 		cerr << "File error\n";
 		exit(0);
 	}
-	plik.close();
+
 
 }
 
@@ -181,25 +173,26 @@ void selectABC(vector<Action> pi, Action& a, Action& b, Action& c, int U, bool& 
 		isC = true; // c jest potrzebne
 }
 
-void rqp(vector<Action> pi, int& r1, int& p1, int& q1, Action b, Action c)
+
+void rqp(vector<Action> pi, int& r1, int& p1, int& q1, int b_id, int c_id)
 {
 	int j = 0;
-	priority_queue<Action, vector<Action>, LowestR> R; // kolejki do wyznaczania r' i q'
-	priority_queue<Action, vector<Action>, LowestQ> Q;
+	priority_queue<int, vector<int>, greater<int>> R; // kolejki do wyznaczania r' i q'
+	priority_queue<int, vector<int>, greater<int>> Q;
 
-	while (pi[j].id != c.id) // przewijanie do zadania c
+	while (pi[j].id != c_id) // przewijanie do zadania c
 		j++;
 
 	// od c + 1 do b
-	while (pi[j].id != b.id) // wyznaczanie r', p', q'
+	while (pi[j].id != b_id) // wyznaczanie r', p', q'
 	{
 		j++;
-		R.push(pi[j]); // wybieranie najmniejszego r z zakresu c+1 <= j <= b
-		Q.push(pi[j]); // wybieranie najmniejszego q z zakresu c+1 <= j <= b
+		R.push(pi[j].r); // wybieranie najmniejszego r z zakresu c+1 <= j <= b
+		Q.push(pi[j].q); // wybieranie najmniejszego q z zakresu c+1 <= j <= b
 		p1 += pi[j].p;
 	}
-	r1 = R.top().r;
-	q1 = Q.top().q;
+	r1 = R.top();
+	q1 = Q.top();
 }
 
 void showPermutation(vector<Action> pi)
@@ -260,7 +253,7 @@ void Carlier(vector<Action> actions, vector<Action>& pi_opt, int& UB, int& overa
 		return;
 
 	// 5.
-	rqp(pi, r1, p1, q1, b, c); // wyznaczanie r', p', q'
+	rqp(pi, r1, p1, q1, b.id, c.id); // wyznaczanie r', p', q'
 
 	// 6.
 	cR = c.r; // przechowanie starego c.r przed wejściem w rekurencję
@@ -284,7 +277,7 @@ void Carlier(vector<Action> actions, vector<Action>& pi_opt, int& UB, int& overa
 	
 	// 11.
 	cQ = c.q; // przechowanie starego c.q przed wejściem w rekurencję
-	c.q = max(c.q, q1 + p1); //  modyfikacja c.q (kopii)-- przesunięcie c przed c + 1
+	c.q = max(c.q, q1 + p1); //  modyfikacja c.q (kopii) -- przesunięcie c przed c + 1
 	actions[c.id - 1] = c; // wprowadzenie zmienionego c.q do oryginalnego zadania
 
 	// 12.
@@ -309,6 +302,7 @@ int main()
 	int UB = INT_MAX; // początkowe UB równe makymalnie dużo
 	vector<Action> pi_opt; // optymalna permutacja
 	
+	
 	for (int i = 1; i <= 10; i++)
 	{
 		string name = "SCHRAGE";
@@ -322,5 +316,6 @@ int main()
 		UB = INT_MAX;
 		pi_opt.clear();
 	}
+	
 	// Carlier(loadFromFile("SCHRAGE3.DAT"), pi_opt, UB, ond, nd, pnd);
 }
