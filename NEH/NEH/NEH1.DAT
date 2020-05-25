@@ -1,0 +1,17 @@
+6 3
+1 5 7
+4 5 3
+1 4 8
+7 3 9
+3 6 9
+4 7 6
+
+	priority_queue<AllMachinesTask, vector<AllMachinesTask>, LowestSum> sortedTasks;
+	sortedTasks = loadFromFile("NEH1.DAT");
+	vector<AllMachinesTask> vec;
+	vec.push_back(sortedTasks.top());
+	sortedTasks.pop();
+	auto it = vec.begin();
+	it = vec.insert(it, sortedTasks.top());
+	print_vec(vec);
+
