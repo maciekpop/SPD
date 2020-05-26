@@ -6,7 +6,8 @@
 
 using namespace std;
 
-int n, m;
+int n,
+	m;
 
 struct SubTask
 {
@@ -14,21 +15,22 @@ struct SubTask
 		C{ 0 };
 };
 
-struct Task
+struct FullTask
 {
-	int id{ 0 }, sum_p{ 0 };
+	int id{ 0 },
+		sum_p{ 0 };
 	vector<SubTask> subTask;
 };
 
 struct Permutation
 {
-	vector<Task> order;
-	int C{ 0 };
+	vector<FullTask> perm;
+	int cMax{ 0 };
 };
 
 struct HighestSum
 {
-	bool operator()(const Task& x, const Task& y)
+	bool operator()(const FullTask& x, const FullTask& y)
 	{
 		return x.sum_p < y.sum_p;
 	}
@@ -38,15 +40,14 @@ struct LowestC
 {
 	bool operator()(const Permutation& x, const Permutation& y)
 	{
-		return x.C > y.C;
+		return x.cMax > y.cMax;
 	}
 };
 
-void print_vec(const vector<Task>& vec)
+void printVec(const vector<FullTask>& vec)
 {
-	for (auto x : vec) {
+	for (auto x : vec) 
 		cout << ' ' << x.id;
-	}
 }
 
 template<typename T, class C>
@@ -56,19 +57,20 @@ void cleanQueue(priority_queue<T, vector<T>, C>& Q)
 		Q.pop();
 }
 
-priority_queue<Task, vector<Task>, HighestSum> loadFromFile(string fileName)
+priority_queue<FullTask, vector<FullTask>, HighestSum> loadFromFile(string fileName)
 {
 	fstream plik;
 	plik.open(fileName, ios::in);
 	if (plik.good())
 	{
 		plik >> n >> m;
-		vector<Task> task(n);
-		priority_queue<Task, vector<Task>, HighestSum> taskList;
+		vector<FullTask> task(n);
+		priority_queue<FullTask, vector<FullTask>, HighestSum> taskList;
 
 		for (int i = 0; i < n; i++)
 		{
 			task[i].id = i + 1;
+			task[i].subTask.push_back(*new SubTask);
 			for (int j = 0; j < m; j++)
 			{
 				SubTask subTask;
@@ -76,6 +78,7 @@ priority_queue<Task, vector<Task>, HighestSum> loadFromFile(string fileName)
 				task[i].subTask.push_back(subTask);
 				task[i].sum_p += subTask.p;
 			}
+
 			taskList.push(task[i]);
 		}
 
@@ -89,76 +92,59 @@ priority_queue<Task, vector<Task>, HighestSum> loadFromFile(string fileName)
 	}
 }
 
-int countPermutationCMax(vector<Task> task)
+void countPermutation_cMax(Permutation& P)
 {
-	int C = 0;
-	for (int j = 0; j < (int) task.size(); j++)
-	{
-		for (int k = 0; k < m; k++)
-		{
-			if (j == 0 && k == 0)
-				task[j].subTask[k].C = task[j].subTask[k].p;
-		
-			if (j == 0 && k != 0)
-				task[j].subTask[k].C = task[j].subTask[k - 1].C + task[j].subTask[k].p;
-			
-			if (j != 0 && k == 0)
-				task[j].subTask[k].C = task[j - 1].subTask[k].C + task[j].subTask[k].p;
+	int permFullTaskNumber = P.perm.size();
 
-			if (j != 0 && k != 0)
-				task[j].subTask[k].C = max(task[j - 1].subTask[k].C, task[j].subTask[k - 1].C) + task[j].subTask[k].p;
+	for (int j = 1; j < permFullTaskNumber; j++)
+		for (int k = 1; k <= m; k++)
+				P.perm[j].subTask[k].C = max(P.perm[j - 1].subTask[k].C, P.perm[j].subTask[k - 1].C) + P.perm[j].subTask[k].p;
 
-			C = max(C, task[j].subTask[k].C);
-		}
-	}
-	return C;
+	P.cMax = P.perm[permFullTaskNumber - 1].subTask[m].C;
 }
 
-Permutation NEH(priority_queue<Task, vector<Task>, HighestSum> taskList)
+void NEH(priority_queue<FullTask, vector<FullTask>, HighestSum>& taskList, Permutation& permutation)
 {
-	Task task;
-	vector<Task> taskOrder;
+	FullTask task;
 	priority_queue<Permutation, vector<Permutation>, LowestC> permutationQueue;
-	Permutation permutation;
-	int cMax = INT_MAX;
+	
+	for (int i = 0; i <= m; i++)
+		task.subTask.push_back(*new SubTask);
+	permutation.perm.push_back(task);
 
 	while(!taskList.empty())
 	{
 		task = taskList.top();
 		taskList.pop();
-
-		for (int i = 0; i < (int)taskOrder.size() + 1; i++)
+		
+		for (int i = 1; i < (int)permutation.perm.size() + 1; i++)
 		{
-			taskOrder.insert(taskOrder.begin() + i, task);
-			permutation.order = taskOrder;
-			permutation.C = countPermutationCMax(taskOrder);
+			auto it = permutation.perm.begin();
+			permutation.perm.insert(it + i, task);
+			countPermutation_cMax(permutation);
 			permutationQueue.push(permutation);
-			taskOrder.erase(taskOrder.begin() + i);
+			it = permutation.perm.begin();
+			permutation.perm.erase(it + i);
 		}
-
-		taskOrder = permutationQueue.top().order;
-		cMax = permutationQueue.top().C;
+ 
+		permutation = permutationQueue.top();
 		cleanQueue(permutationQueue);
 	}
-
-	permutation.order = taskOrder;
-	permutation.C = cMax;
-	return permutation;
 }
 
 int main()
 {
-	Permutation P;
-	priority_queue<Task, vector<Task>, HighestSum> taskList;
 	for (int i = 1; i <= 9; i++)
 	{
+		priority_queue<FullTask, vector<FullTask>, HighestSum> taskList;
+		Permutation P;
 		string name = "NEH";
 		string num = to_string(i);
 		string ext = ".DAT";
 		cout << i << ". ";
 		taskList = loadFromFile(name + num + ext);
-		P = NEH(taskList);
-		//cout << "permutacja: "; print_vec(P.tasksOrder); cout << endl; 
-		cout << "   cmax: " << P.C <<endl;
+		NEH(taskList, P);
+		//cout << "permutacja: "; printVec(P.perm); cout << endl; 
+		cout << "   cmax: " << P.cMax <<endl;
 	}
 }
